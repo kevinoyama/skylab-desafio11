@@ -73,38 +73,87 @@ const FoodDetails: React.FC = () => {
 
   useEffect(() => {
     async function loadFood(): Promise<void> {
-      // Load a specific food with extras based on routeParams id
+      const response = await api.get(`/foods/${routeParams.id}`);
+
+      setFood(response.data);
+
+      setExtras(
+        response.data.extras.map((extra: Extra) => {
+          return {
+            ...extra,
+            quantity: 0,
+          };
+        }),
+      );
     }
 
     loadFood();
   }, [routeParams]);
 
   function handleIncrementExtra(id: number): void {
-    // Increment extra quantity
+    const newList = extras.map(item => {
+      if (item.id === id) {
+        return { ...item, quantity: item.quantity + 1 };
+      }
+      return item;
+    });
+
+    setExtras(newList);
   }
 
   function handleDecrementExtra(id: number): void {
-    // Decrement extra quantity
+    const newList = extras.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          quantity: item.quantity - 1 < 0 ? 0 : item.quantity - 1,
+        };
+      }
+      return item;
+    });
+
+    setExtras(newList);
   }
 
   function handleIncrementFood(): void {
-    // Increment food quantity
+    setFoodQuantity(qtd => qtd + 1);
   }
 
   function handleDecrementFood(): void {
-    // Decrement food quantity
+    setFoodQuantity(qtd => (qtd - 1 < 1 ? 1 : qtd - 1));
   }
 
-  const toggleFavorite = useCallback(() => {
-    // Toggle if food is favorite or not
-  }, [isFavorite, food]);
+  const toggleFavorite = useCallback(async () => {
+    // to Do
+    ///
+    /// /
+    ///
+  }, [isFavorite]);
 
   const cartTotal = useMemo(() => {
-    // Calculate cartTotal
+    const totalExtras = extras.reduce(
+      (old, extra) => extra.quantity * extra.value + old,
+      0,
+    );
+
+    const totalFood = food.price * foodQuantity;
+
+    return formatValue(totalExtras + totalFood);
   }, [extras, food, foodQuantity]);
 
   async function handleFinishOrder(): Promise<void> {
-    // Finish the order and save on the API
+    const order = {
+      product_id: food.id,
+      name: food.name,
+      description: food.description,
+      price: food.price,
+      thumbnail_url: food.image_url,
+      extras: extras.filter(item => item.quantity > 0),
+    };
+
+    await api.post('/orders', order);
+
+    navigation.goBack();
   }
 
   // Calculate the correct icon name
